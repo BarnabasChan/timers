@@ -1,14 +1,14 @@
 import json
 import time
 from datetime import date
-from sys import getsizeof
+from sys import exit
 
 NAMES_FILENAME = './data/names.txt'
 SECONDS_IN_MINUTE = 60
 SECONDS_IN_HOUR = SECONDS_IN_MINUTE * 60
 
 def main():
-    global data, filename, names, start_times
+    global data, filename, names, start_times, dateInMonth
 
     today = date.today()
     filename = today.strftime("./data/%Y %B.json")
@@ -36,78 +36,101 @@ def main():
     while True:
         command = input("> ")
         tokens = command.split()
-        match len(tokens):
 
-            case 1:
-                match tokens[0]:
-                    case 'quit':
-                        save()
-                        break
-                    
-                    case 'save':
-                        save()
-                    
-                    case 'list':
-                        max_len = max(map(len, names))
-                        curr = time.time()
-                        for name, value in data[dateInMonth].items():
-                            if name in start_times:
-                                value += curr - start_times[name]
-                            print(f"{name}{' ' * (max_len - len(name))} | {time_convert(value)}")
 
-            case 2:
-                if tokens[0] == 'eval':
-                    print(eval(command[command.index("eval")+4:]))
-                    continue
+        if tokens[0] == 'eval':
+            print(eval(command[command.index("eval")+4:]))
+            continue
+        
+        execute(tokens)
 
-                name = tokens[1]
-                
-                match tokens[0]:
 
-                    case 'add':
-                        names.add(name)
-                        data[dateInMonth][name] = 0
+def execute(tokens:list[str]):
+    if not tokens: return
+    match tokens[0]:
+        case 'quit':
+            execute(tokens[1:])
+            save()
+            exit()
+        
+        case 'save':
+            save()
+        
+        case 'execute':
+            execute(tokens[1:])
 
-                    case 'remove':
-                        if name not in names:
-                            print(f"Invalid name {name} (does not exist)")
-                            continue
-                        names.remove(name)
-                        del data[dateInMonth][name]
+        case 'list':
+            list_timers()
 
-                    case 'start':
-                        if name not in names:
-                            print(f"Invalid name {name} (you can use the 'add' command to add a new name)")
-                            continue
-                        if name in start_times:
-                            print(f"Timer '{name}' has already started")
-                        else:
-                            start_times[name] = time.time()
+        case 'create':
+            if len(tokens) != 2: return print("Invalid amount of argument for command 'create' (expected 1)")
+            create(tokens[1])
+        
+        case 'delete':
+            if len(tokens) != 2: return print("Invalid amount of argument for command 'delete' (expected 1)")
+            delete(tokens[1])
 
-                    case 'stop':
-                        if name not in names:
-                            print(f"Invalid name {name} (you can use the 'add' command to add a new name)")
-                            continue
-                        if name not in start_times:
-                            print(f"Timer '{name}' has not been started yet")
-                        else:
-                            time_passed = time.time() - start_times[name]
-                            data[dateInMonth][name] = time_passed if name not in data[dateInMonth] else data[dateInMonth][name] + time_passed
-                            print(f"{name} | passed: {time_convert(time_passed)} | total: {time_convert(data[dateInMonth][name])}")
-                            del start_times[name]
+        case 'start':
+            start(tokens[1])
+        
+        case 'stop':
+            stop(tokens[1])
 
-                    case 'get':
-                        if name not in names:
-                            print(f"Invalid name {name} (you can use the 'add' command to add a new name)")
-                            continue
-                        if name not in start_times:
-                            print(f"{name} | total: {time_convert(data[dateInMonth][name])}")
-                        else:
-                            time_passed = time.time() - start_times[name]
-                            print(f"{name} | passed: {time_convert(time_passed)} | total: {time_convert(data[dateInMonth][name] + time_passed)}")
+        case 'get':
+            get(tokens[1])
+            
+        
 
-            case _:
-                print(f"Unknown command '{command}'")
+def create(name:str):
+    global data, names
+    if name in names: return print("Name '{name}' already exists")
+    names.add(name)
+    data[dateInMonth][name] = {}
+
+
+def delete(name:str):
+    if name not in names:
+        print(f"Invalid name {name} (does not exist)")
+        return
+    names.remove(name)
+    del data[dateInMonth][name]
+
+
+def start(name:str):
+    if name not in names: return print(f"Invalid name {name} (you can use the 'create' command to add a new name)")
+    if name in start_times:
+        print(f"Timer '{name}' has already started")
+    else:
+        start_times[name] = time.time()
+
+
+def stop(name:str):
+    if name not in names: return print(f"Invalid name {name} (you can use the 'create' command to add a new name)")
+    if name not in start_times:
+        print(f"Timer '{name}' has not been started yet")
+    else:
+        time_passed = time.time() - start_times[name]
+        data[dateInMonth][name] = time_passed if name not in data[dateInMonth] else data[dateInMonth][name] + time_passed
+        print(f"{name} | passed: {time_convert(time_passed)} | total: {time_convert(data[dateInMonth][name])}")
+        del start_times[name]
+
+
+def list_timers():
+    max_len = max(map(len, names))
+    curr = time.time()
+    for name, value in data[dateInMonth].items():
+        if name in start_times:
+            value += curr - start_times[name]
+        print(f"{name}{' ' * (max_len - len(name))} | {time_convert(value)}")
+
+def get(name:str):
+    if name not in names:
+        print(f"Invalid name {name} (you can use the 'add' command to add a new name)")
+    if name not in start_times:
+        print(f"{name} | total: {time_convert(data[dateInMonth][name])}")
+    else:
+        time_passed = time.time() - start_times[name]
+        print(f"{name} | passed: {time_convert(time_passed)} | total: {time_convert(data[dateInMonth][name] + time_passed)}")
 
 
 def save():
