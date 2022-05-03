@@ -20,6 +20,9 @@ def main():
             data = json.load(file)
     except json.JSONDecodeError:
         data = {}
+    except FileNotFoundError:
+        data = {}
+        open(filename, 'x').close()
     if str(dateInMonth) not in data:
         data[dateInMonth] = {}
         
@@ -83,9 +86,9 @@ def execute(tokens:list[str]):
 
 def create(name:str):
     global data, names
-    if name in names: return print("Name '{name}' already exists")
+    if name in names: return print(f"Name '{name}' already exists")
     names.add(name)
-    data[dateInMonth][name] = {}
+    data[dateInMonth][name] = 0
 
 
 def delete(name:str):
