@@ -1,18 +1,18 @@
 import json
 import time
-from datetime import date
-from sys import exit
+from datetime import date, timedelta
+from sys import exit, argv
 
 NAMES_FILENAME = './data/names.txt'
 SECONDS_IN_MINUTE = 60
 SECONDS_IN_HOUR = SECONDS_IN_MINUTE * 60
 
-def main():
+def main(yesterday:bool):
     global data, filename, names, start_times, dateInMonth
 
-    today = date.today()
-    filename = today.strftime("./data/%Y %B.json")
-    dateInMonth = today.strftime("%d")
+    day = date.today() - timedelta(days=1) if yesterday else date.today()
+    filename = day.strftime("./data/%Y %B.json")
+    dateInMonth = day.strftime("%d")
 
     # load data from earlier today
     try:
@@ -74,12 +74,16 @@ def execute(tokens:list[str]):
             delete(tokens[1])
 
         case 'start':
+            if len(tokens) != 2: return print("Invalid amount of argument for command 'start' (expected 1)")
             start(tokens[1])
         
         case 'stop':
-            stop(tokens[1])
+            if len(tokens) == 1: stop_all()
+            elif len(tokens) == 2: stop(tokens[1])
+            else: return print("Invalid amount of argument for command 'stop' (expected 1 or 2)")
 
         case 'get':
+            if len(tokens) != 2: return print("Invalid amount of argument for command 'get' (expected 1)")
             get(tokens[1])
             
         
@@ -116,6 +120,11 @@ def stop(name:str):
         data[dateInMonth][name] = time_passed if name not in data[dateInMonth] else data[dateInMonth][name] + time_passed
         print(f"{name} | passed: {time_convert(time_passed)} | total: {time_convert(data[dateInMonth][name])}")
         del start_times[name]
+
+
+def stop_all():
+    for name in tuple(start_times):
+        stop(name)
 
 
 def list_timers():
@@ -163,4 +172,4 @@ def time_convert(seconds:float) -> str:
 
 
 if __name__ == "__main__":
-    main()
+    main('-y' in argv)
