@@ -1,5 +1,7 @@
+from calendar import c
 import json
 import time
+import os
 from datetime import date, timedelta
 from sys import exit, argv
 
@@ -51,7 +53,7 @@ def main(yesterday:bool):
 def execute(tokens:list[str]):
     if not tokens: return
     match tokens[0]:
-        case 'quit':
+        case 'quit' | 'exit':
             execute(tokens[1:])
             save()
             exit()
@@ -85,8 +87,33 @@ def execute(tokens:list[str]):
         case 'get':
             if len(tokens) != 2: return print("Invalid amount of argument for command 'get' (expected 1)")
             get(tokens[1])
-            
         
+        case 'add':
+            if len(tokens) != 3: return print("Invalid amount of argument for command 'add' (expected 2)")
+            add(*tokens[1:])
+
+        case 'subtract' | 'minus':
+            if len(tokens) != 3: return print("Invalid amount of argument for command 'substract' (expected 2)")
+            subtract(*tokens[1:])
+        
+        case _:
+            print(f"Unknown command '{tokens[0]}'")
+
+
+def add(name, time_string):
+    time = strptimedelta(time_string)
+    if time is None: return print(f"Invalid time {time_string}")
+    data[dateInMonth][name] += time
+    print(f"{name} | total: {time_convert(data[dateInMonth][name])}")
+
+
+def subtract(name, time_string):
+    time = strptimedelta(time_string)
+    if time is None: return print(f"Invalid time {time_string}")
+    data[dateInMonth][name] -= time
+    if data[dateInMonth][name] < 0: data[dateInMonth][name] = 0
+    print(f"{name} | total: {time_convert(data[dateInMonth][name])}")
+
 
 def create(name:str):
     global data, names
@@ -164,6 +191,7 @@ def save():
         file.truncate()
 
 
+# utilities
 def time_convert(seconds:float) -> str:
     seconds = int(seconds)
     hours, seconds = seconds // SECONDS_IN_HOUR, seconds % SECONDS_IN_HOUR
@@ -171,5 +199,24 @@ def time_convert(seconds:float) -> str:
     return f"{' '*(2-len(str(hours)))}{hours} hrs {' '*(2-len(str(minutes)))}{minutes} mins {' '*(2-len(str(seconds)))}{seconds} secs"
 
 
+def strptimedelta(time_string:str) -> float:
+    match time_string.count(':'):
+        case 0:
+            try:
+                dt = float(time_string) * 60
+            except ValueError: return
+        case 1:
+            tokens = time_string.split(':')
+            try:
+                dt = 0
+                dt += float(tokens[0]) * 60 * 60 # hours
+                dt += float(tokens[1]) * 60 # minutes
+            except ValueError: return
+    return dt
+
+
 if __name__ == "__main__":
+    # change working directory to location of the script
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    
     main('-y' in argv)
