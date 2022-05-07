@@ -9,7 +9,7 @@ NAMES_FILENAME = './data/names.txt'
 SECONDS_IN_MINUTE = 60
 SECONDS_IN_HOUR = SECONDS_IN_MINUTE * 60
 
-def main(yesterday:bool):
+def main():
     global data, filename, names, start_times, dateInMonth
 
     day = date.today() - timedelta(days=1) if yesterday else date.today()
@@ -83,6 +83,7 @@ def execute(tokens:list[str]):
             if len(tokens) == 1: stop_all()
             elif len(tokens) == 2: stop(tokens[1])
             else: return print("Invalid amount of argument for command 'stop' (expected 1 or 2)")
+            if autosave: save()
 
         case 'get':
             if len(tokens) != 2: return print("Invalid amount of argument for command 'get' (expected 1)")
@@ -91,10 +92,12 @@ def execute(tokens:list[str]):
         case 'add':
             if len(tokens) != 3: return print("Invalid amount of argument for command 'add' (expected 2)")
             add(*tokens[1:])
+            if autosave: save()
 
         case 'subtract' | 'minus':
             if len(tokens) != 3: return print("Invalid amount of argument for command 'substract' (expected 2)")
             subtract(*tokens[1:])
+            if autosave: save()
         
         case _:
             print(f"Unknown command '{tokens[0]}'")
@@ -182,13 +185,14 @@ def save():
             else:
                 tmp[name] = curr - start_time
     else: tmp = data
-    print(tmp)
+    # print(tmp)
     with open(filename, 'w') as file:
         json.dump(tmp, file)
     with open(NAMES_FILENAME, 'w') as file:
         names_str = '\n'.join(sorted(names))
         file.write(names_str)
         file.truncate()
+    print("Data saved")
 
 
 # utilities
@@ -219,4 +223,7 @@ if __name__ == "__main__":
     # change working directory to location of the script
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     
-    main('-y' in argv)
+    yesterday = '-y' in argv
+    autosave = '-s' in argv
+
+    main()
