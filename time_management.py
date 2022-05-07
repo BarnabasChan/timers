@@ -84,6 +84,16 @@ def execute(tokens:list[str]):
             elif len(tokens) == 2: stop(tokens[1])
             else: return print("Invalid amount of argument for command 'stop' (expected 1 or 2)")
             if autosave: save()
+        
+        case 'switch':
+            if len(tokens) == 2:
+                stop_all()
+                start(tokens[1])
+            elif len(tokens) == 3:
+                stop(tokens[1])
+                start(tokens[2])
+            else: return print("Invalid amount of argument for command 'switch'")
+            if autosave: save()
 
         case 'get':
             if len(tokens) != 2: return print("Invalid amount of argument for command 'get' (expected 1)")
