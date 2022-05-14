@@ -43,7 +43,7 @@ def main():
         tokens = command.split()
 
 
-        if tokens[0] == 'eval':
+        if tokens and tokens[0] == 'eval':
             print(eval(command[command.index("eval")+4:]))
             continue
         
